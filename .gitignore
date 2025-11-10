@@ -1,0 +1,20 @@
+# Virtual env dan cache
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Data & hasil scraping
+*.xlsx
+output/
+scraping_results/
+
+# File konfigurasi sensitif
+.env
+config.ini
+
+# System
+.DS_Store
+.idea/
+.vscode/
