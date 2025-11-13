@@ -1,3 +1,4 @@
+
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=True
@@ -34,3 +35,4 @@ COPY . .
 RUN if [ ! -f config.ini ]; then echo "config.ini not found in image!"; fi
 
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "300", "main:app"]
+
