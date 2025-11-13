@@ -101,4 +101,4 @@ def scrape_inaportnet(request):
     finally:
         driver.quit()
 
-app = functions_framework.create_app('scrape_inaportnet', 'main.py')
+app = functions_framework.create_app('scrape_inaportnet')
