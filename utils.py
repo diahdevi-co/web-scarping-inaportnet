@@ -10,15 +10,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-
 # Fungsi HTTP dengan retry otomatis
 def get_with_retry(url, max_retries=5, timeout=30, delay=10):
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/120.0 Safari/537.36"
-        )
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120 Safari/537.36"
     }
 
     for attempt in range(max_retries):
@@ -39,7 +34,6 @@ def get_with_retry(url, max_retries=5, timeout=30, delay=10):
     return None
 
 
-
 # Ambil semua link detail dari halaman utama
 def get_detail_links(driver, url):
     print(f"Memuat halaman utama: {url}")
@@ -48,8 +42,8 @@ def get_detail_links(driver, url):
         WebDriverWait(driver, 15).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a.dataLayanan"))
         )
-    except:
-        print("Timeout: Tidak menemukan elemen 'a.dataLayanan'")
+    except Exception as e:
+        print(f"Timeout: Tidak menemukan elemen 'a.dataLayanan' ({type(e).__name__})")
         return []
 
     links = [
@@ -61,7 +55,6 @@ def get_detail_links(driver, url):
     return links
 
 
-
 # Ambil daftar nomor PKK dari modal AJAX
 def get_nomor_produk_list(driver, url):
     print(f"Membuka modal AJAX: {url}")
@@ -70,8 +63,8 @@ def get_nomor_produk_list(driver, url):
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table tbody tr"))
         )
-    except:
-        print("Timeout: Modal tidak muncul atau tabel kosong.")
+    except Exception as e:
+        print(f"Timeout: Modal tidak muncul atau tabel kosong ({type(e).__name__})")
         return []
 
     soup = BeautifulSoup(driver.page_source, "html.parser")
@@ -107,12 +100,12 @@ def scrape_detail_data(pkk_list):
             if " - " in header_text:
                 parts = header_text.split(" - ", 1)
                 kode_pkk = parts[0].strip()
-                kapal_info = parts[1].strip()
-                if "(" in kapal_info:
-                    nama_kapal = kapal_info.split("(")[0].strip()
-                    tipe_kapal = kapal_info.split("(")[-1].replace(")", "").strip()
+                kapal_info_text = parts[1].strip()
+                if "(" in kapal_info_text:
+                    nama_kapal = kapal_info_text.split("(")[0].strip()
+                    tipe_kapal = kapal_info_text.split("(")[-1].replace(")", "").strip()
                 else:
-                    nama_kapal = kapal_info.strip()
+                    nama_kapal = kapal_info_text.strip()
 
             nakhoda = soup.select_one("div.card-header .badge.bg-blue")
             nakhoda_text = (
