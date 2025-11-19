@@ -5,8 +5,7 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Data & hasil scraping (tanpa output/)
-*.xlsx
+# Data & hasil scraping (tanpa output_)
 scraping_results/
 
 # File konfigurasi sensitif
