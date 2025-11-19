@@ -9,15 +9,15 @@ Persyaratan
 
 -----------
 Utama dikendalikan melalui [config.ini](config.ini). Nilai penting:
-- gcp.bucket_name — bucket GCS target
-- gcp.project_id — project BigQuery
-- gcp.dataset — dataset BigQuery
-- gcp.table — tabel BigQuery
+- gcp.bucket_name : bucket GCS target
+- gcp.project_id : project BigQuery
+- gcp.dataset : dataset BigQuery
+- gcp.table : tabel BigQuery
 - DEFAULT.ports — path ke [ports.csv](ports.csv)
 - DEFAULT.months, DEFAULT.yr, DEFAULT.source, DEFAULT.source_code
 
 Cara kerja (ringkas)
-1. Entry point: [`main.scrape_inaportnet`](main.py) — menerima POST untuk memicu scraping.
+1. Entry point: [`main.scrape_inaportnet`](main.py) :  menerima POST untuk memicu scraping.
 2. Inisialisasi driver Chrome: [`main.setup_driver`](main.py).
 3. Untuk setiap port dan bulan, buat URL lalu proses lewat [`main.process_port_month`](main.py).
 4. Fungsi scraping rinci ada di modul [utils.py](utils.py):
@@ -42,30 +42,25 @@ Jalankan lokal (development)
 
 Deployment ke Cloud Functions
 Contoh deploy:
-gcloud functions deploy scrape_inaportnet \
-  --runtime python310 \
-  --trigger-http \
-  --allow-unauthenticated \
-  --entry-point scrape_inaportnet \
-  --region <REGION> \
-  --project <PROJECT>
+gcloud run deploy web-scraping-inaportnet \
+    --source . \
+    --region asia-southeast2 \
+    --clear-base-image
+
 
 (Atur variabel environment atau perbarui [config.ini](config.ini) sesuai kebutuhan)
 
 Docker
-------
 Dockerfile ada di repo; build & run container untuk environment headless Chrome yang konsisten:
 docker build -t inaportnet-scraper .
 docker run --env GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json -v /local/key.json:/path/to/key.json inaportnet-scraper
 
 Troubleshooting singkat
-----------------------
 - Chrome driver error: pastikan versi Chrome & chromedriver kompatibel.
 - Izin GCP: service account harus punya akses write ke bucket dan BigQuery load.
 - Tidak ada data: periksa [ports.csv](ports.csv) dan format months di [config.ini](config.ini).
 
 Referensi kode
---------------
 - Entry point dan pipeline: [`main.py`](main.py)
 - Helper scraping: [`utils.py`](utils.py)
 - Konfigurasi: [`config.ini`](config.ini)
