@@ -5,14 +5,12 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Data & hasil scraping
+# Data & hasil scraping (tanpa output/)
 *.xlsx
-output/
 scraping_results/
 
 # File konfigurasi sensitif
 .env
-
 
 # System
 .DS_Store

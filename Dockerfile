@@ -1,38 +1,61 @@
-
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=True
 ENV PORT=8080
+ENV CHROME_VERSION=131.0.6778.87
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    wget unzip gnupg curl jq fonts-liberation libasound2 libatk1.0-0 \
-    libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libnspr4 libnss3 \
-    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 \
-    libcairo2 libatspi2.0-0 libxshmfence1 libx11-xcb1 \
-    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+    wget unzip gnupg curl \
+    fonts-liberation libasound2 libatk1.0-0 libatk-bridge2.0-0 \
+    libcups2 libdrm2 libxkbcommon0 libnspr4 libnss3 \
+    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
+    libpango-1.0-0 libcairo2 libatspi2.0-0 libxshmfence1 libx11-xcb1 \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install Google Chrome and matched ChromeDriver
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && apt-get install -y google-chrome-stable && \
-    CHROME_VERSION=$(google-chrome --version | awk '{print $3}') && \
-    MAJOR_VERSION=$(echo $CHROME_VERSION | cut -d '.' -f 1) && \
-    DRIVER_URL=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json | \
-      jq -r --arg ver "$MAJOR_VERSION" '.versions[] | select(.version | startswith($ver)) | .downloads.chromedriver[] | select(.platform=="linux64") | .url' | head -n 1) && \
-    wget -O /tmp/chromedriver.zip "$DRIVER_URL" && \
-    unzip /tmp/chromedriver.zip -d /usr/local/bin && \
-    mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \
-    chmod +x /usr/local/bin/chromedriver && rm -rf /tmp/chromedriver.zip && apt-get clean
+# Install specific Chrome version
+RUN wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
+    -O /tmp/chrome.zip && \
+    unzip -q /tmp/chrome.zip -d /opt && \
+    ln -s /opt/chrome-linux64/chrome /usr/bin/google-chrome && \
+    rm /tmp/chrome.zip
+
+# Install matching ChromeDriver
+RUN wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
+    -O /tmp/chromedriver.zip && \
+    unzip -q /tmp/chromedriver.zip -d /tmp && \
+    mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \
+    chmod +x /usr/local/bin/chromedriver && \
+    rm -rf /tmp/chromedriver* && \
+    \
+    # Verify versions
+    echo "Chrome version:" && google-chrome --version && \
+    echo "ChromeDriver version:" && chromedriver --version
 
 WORKDIR /app
 
+# Copy and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application files
 COPY . .
 
-RUN if [ ! -f config.ini ]; then echo "config.ini not found in image!"; fi
+# Create default config.ini if not exists
+RUN if [ ! -f config.ini ]; then \
+    echo "[gcp]" > config.ini && \
+    echo "bucket_name=exampletesting9999" >> config.ini && \
+    echo "project_id=corporate-digital" >> config.ini && \
+    echo "dataset=DIGITAL_INTERNSHIP" >> config.ini && \
+    echo "table=inaportnet_scraped_data" >> config.ini; \
+    fi
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "300", "main:app"]
+# Verify required files exist
+RUN ls -la && \
+    test -f main.py && echo "main.py exists" || echo "main.py missing" && \
+    test -f utils.py && echo "utils.py exists" || echo "utils.py missing" && \
+    test -f config.ini && echo "config.ini exists" || echo "config.ini missing"
 
+# Start the functions framework
+CMD exec functions-framework --target=scrape_inaportnet --host=0.0.0.0 --port=${PORT}
